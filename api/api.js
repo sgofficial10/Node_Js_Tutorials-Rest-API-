@@ -1,10 +1,17 @@
 const express = require('express')
 const body_parser = require('body-parser');
 const mongojs_db_connection = require('../database/database.config.js');
+const asyncMiddleware = require('../utils/middleware');
 const Joi = require('joi');
 const formidable = require('formidable');
-const router = express()
+
 const path = require('path');
+let appRoot = require('app-root-path');
+
+
+
+
+const router = express()
 
 router.use(body_parser.urlencoded({extended: true}))
 router.use(body_parser.json())
@@ -34,7 +41,7 @@ router.post('/insert', (req, res) => {
             });
             return;
         } else {
-            mongojs_db_connection.db.users.insert({'user_name' : req.body.username, 'email_address' : req.body.email, is_delete: 0}, function(err, docs){
+            mongojs_db_connection.db.users.insert({'user_name' : req.body.user_name, 'email_address' : req.body.email_address, is_delete: 0}, function(err, docs){
                 if(err) {
                     res.status(400).send({
                         'success' : false,
@@ -184,10 +191,64 @@ router.get('/delete/:user_id', function(req, res){
 
 
 
-// router.post('/file_upload', function(req, res){
-//     let form = new formidable.IncomingForm();
-//     form.parse(req);
-// });
+router.post('/file_upload', function(req, res){
+    let form = new formidable.IncomingForm();
+    form.parse(req);
+    form.on('fileBegin', function (name, file){
+        file.path = __dirname + '/uploads/images/' + file.name;
+    });
+    res.status(200).send({
+        'success' : true,
+        'message' : 'Image uploaded successfully done.'
+    });
+    return;
+});
+
+
+function Insert(insert_object){
+    return new Promise(function(resolve, reject){
+        mongojs_db_connection.db.users.insert(insert_object, function(err, docs){
+            if(err) {
+                reject(err);
+            } else {
+                resolve(docs);
+            }
+        });
+    });
+}
+
+router.post('/async_await_insert', async (req, res, next) => {
+    try {
+        const schema = {
+            user_name: Joi.string().required(),
+            email_address: Joi.string().required()
+        }
+        const input_validate = Joi.validate(req.body, schema);
+        if(input_validate.error) {
+            res.status(400).send({
+                'success' : false,
+                'message' : input_validate.error.details[0].message
+            });
+            return;
+        } else {
+            let insert_object = {'user_name' : req.body.user_name, 'email_address' : req.body.email_address, is_delete: 0};
+            const insert_status = await Insert(insert_object);
+            res.status(200).send({
+                'success' : true,
+                'message' : 'user created successfully done.'
+            });
+            return;
+        }
+    } catch(e){
+        res.status(400).send({
+            'success' : false,
+            'message' : e.message
+        });
+        return;
+    }
+});
+
+
 
 
 

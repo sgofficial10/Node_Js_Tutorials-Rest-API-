@@ -1,7 +1,9 @@
+
+
 const app = require('./api/api.js')
 
 
-
+global.__basedir = __dirname;
 
 
 
