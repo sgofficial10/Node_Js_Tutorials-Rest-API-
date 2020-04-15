@@ -4,6 +4,7 @@ const mongojs_db_connection = require('../database/database.config.js');
 const asyncMiddleware = require('../utils/middleware');
 const Joi = require('joi');
 const formidable = require('formidable');
+const password = require('../utils/password_bcrypt');
 
 const path = require('path');
 let appRoot = require('app-root-path');
@@ -25,6 +26,8 @@ router.get('/', (req, res) => {
 });
 
 
+
+/*
 router.post('/insert', (req, res) => {
     try {
         const schema = {
@@ -56,6 +59,64 @@ router.post('/insert', (req, res) => {
                     return;
                 }
 
+            });
+        }
+    } catch(e){
+        console.log(e);
+    }
+    
+});
+*/
+
+
+router.post('/insert', (req, res) => {
+    try {
+        const schema = {
+            user_name: Joi.string().required(),
+            email_address: Joi.string().required(),
+            password:Joi.string().required()
+        }
+        
+
+        const input_validate = Joi.validate(req.body, schema);
+        if(input_validate.error) {
+            res.status(400).send({
+                'success' : false,
+                'message' : input_validate.error.details[0].message
+            });
+            return;
+        } else {
+            password(req.body.password) .then((value) => {
+                try {
+                    mongojs_db_connection.db.users.insert({'user_name' : req.body.user_name, 'email_address' : req.body.email_address, 'password' : value, is_delete: 0}, function(err, docs){
+                        if(err) {
+                            res.status(400).send({
+                                'success' : false,
+                                'message' : 'somethings went wrong.'
+                            });
+                            return;
+                        } else {
+                            res.status(200).send({
+                                'success' : true,
+                                'message' : 'user created successfully done.'
+                            });
+                            return;
+                        }
+
+                    });
+                } catch(e) {
+                    res.status(400).send({
+                        'success' : false,
+                        'message' : 'somethings went wrong.'
+                    });
+                    return;
+                }
+            }, (reject) => {
+                res.status(400).send({
+                    'success' : false,
+                    'message' : 'somethings went wrong.'
+                });
+                return;
             });
         }
     } catch(e){
@@ -221,7 +282,8 @@ router.post('/async_await_insert', async (req, res, next) => {
     try {
         const schema = {
             user_name: Joi.string().required(),
-            email_address: Joi.string().required()
+            email_address: Joi.string().required(), 
+            password: Joi.string().required()
         }
         const input_validate = Joi.validate(req.body, schema);
         if(input_validate.error) {
@@ -231,6 +293,7 @@ router.post('/async_await_insert', async (req, res, next) => {
             });
             return;
         } else {
+            
             let insert_object = {'user_name' : req.body.user_name, 'email_address' : req.body.email_address, is_delete: 0};
             const insert_status = await Insert(insert_object);
             res.status(200).send({
@@ -247,6 +310,48 @@ router.post('/async_await_insert', async (req, res, next) => {
         return;
     }
 });
+
+
+
+
+router.post('/advanced_insert', async (req, res, next) => {
+    try {
+        const schema = {
+            user_name: Joi.string().required(),
+            email_address: Joi.string().required(), 
+            password: Joi.string().required()
+        }
+        const input_validate = Joi.validate(req.body, schema);
+        if(input_validate.error) {
+            res.status(400).send({
+                'success' : false,
+                'message' : input_validate.error.details[0].message
+            });
+            return;
+        } else {
+            let hashed_password = await password(req.body.password);
+            let insert_object = {'user_name' : req.body.user_name, 'email_address' : req.body.email_address, 'password' : hashed_password, is_delete: 0};
+            const insert_status = await Insert(insert_object);
+            res.status(200).send({
+                'success' : true,
+                'message' : 'user created successfully done.'
+            });
+            return;
+        }
+    } catch(e){
+        res.status(400).send({
+            'success' : false,
+            'message' : e.message
+        });
+        return;
+    }
+})
+
+
+
+
+
+
 
 
 
