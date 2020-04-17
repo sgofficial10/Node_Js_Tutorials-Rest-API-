@@ -13,5 +13,19 @@ async function password_hashing(password){
 }
 
 
+async function check_password(give_password, store_password){
+    return new Promise((reslove, reject) => {
+        bcrypt.compare(give_password, store_password, (err, result) => {
+            if (err) reject(err);
+            reslove(result);
+        });
+    });
+}
 
-module.exports = password_hashing;
+
+
+module.exports = {
+    password_hashing : password_hashing,
+    check_password : check_password
+
+}

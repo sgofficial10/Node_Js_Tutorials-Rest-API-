@@ -1,4 +1,5 @@
 const express = require('express')
+const config = require('config')
 const body_parser = require('body-parser');
 const mongojs_db_connection = require('../database/database.config.js');
 const asyncMiddleware = require('../utils/middleware');
@@ -6,13 +7,11 @@ const Joi = require('joi');
 const formidable = require('formidable');
 const password = require('../utils/password_bcrypt');
 
-const path = require('path');
-let appRoot = require('app-root-path');
 
 
 
 
-const router = express()
+const router = express.Router();
 
 router.use(body_parser.urlencoded({extended: true}))
 router.use(body_parser.json())
@@ -86,7 +85,7 @@ router.post('/insert', (req, res) => {
             });
             return;
         } else {
-            password(req.body.password) .then((value) => {
+            password.password_hashing(req.body.password) .then((value) => {
                 try {
                     mongojs_db_connection.db.users.insert({'user_name' : req.body.user_name, 'email_address' : req.body.email_address, 'password' : value, is_delete: 0}, function(err, docs){
                         if(err) {
@@ -346,6 +345,8 @@ router.post('/advanced_insert', async (req, res, next) => {
         return;
     }
 })
+
+
 
 
 

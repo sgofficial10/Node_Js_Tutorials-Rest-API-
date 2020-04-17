@@ -1,12 +1,20 @@
+const config = require('config');
+const express = require('express');
+const api = require('./api/api.js');
+const user = require('./api/login_register');
+
+// set enviroment variable use keyword export
+const app = express();
+app.use('/', api);
+app.use('/user', user)
 
 
-const app = require('./api/api.js')
 
-
-global.__basedir = __dirname;
-
-
-
+if(!config.get('jwt_private_key')){
+    console.error('private key is not define.');
+    // 0 means success and 1 means error
+    process.exit(1);
+}
 
 app.listen(3000, () => {
     console.log('Server is listening on port 3000');
