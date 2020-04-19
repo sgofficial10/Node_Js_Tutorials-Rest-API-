@@ -13,7 +13,7 @@ const route = express.Router();
 
 route.post('/login', async(req, res, next) => {
     try {
-        fetch_object = {'email_address' : req.body.email_address, 'is_delete' : 0};
+        fetch_object = {'email_address' : req.body.email_address, 'is_delete' : '0'};
         get_user_details(fetch_object).then((result) => {
             if(result && result.email_address) {
                 password.check_password(req.body.password, result.password).then((compare_password_status) => {
@@ -77,6 +77,75 @@ async function get_user_details(fetch_object) {
             });
         } catch(e) {
             reject(e);
+        }
+    });
+}
+
+
+
+
+
+
+route.post('/register', async(req, res, next) => {
+    try {
+        const check_email_exists_status = await check_email_exists(req.body.email_address);
+        if(!check_email_exists_status) {
+            const hashed_password = await password.password_hashing(req.body.password)
+            let insert_object = {
+                'email_address' : req.body.email_address,
+                'username' : req.body.username,
+                'gender' : req.body.gender,
+                'password' : hashed_password,
+                'is_delete' : '0'
+            }
+            const insert_status = await create_new_user(insert_object);
+                res.status(200).send({
+                    'success' : true,
+                    'message' : 'user created successfully done.'
+                });
+                return;
+        } else {
+            res.status(400).send({
+                'success' : false,
+                'message' : 'email already exists.'
+            });
+            return;
+        }
+        
+    } catch(err) {
+        console.log(err);
+        res.status(400).send({
+            'success' : false,
+            'message' : err.message
+        });
+        return;
+    }
+});
+
+
+async function create_new_user(insert_object){
+    return new Promise ((reslove, reject) => {
+        try {
+            mongojs_db_connection.db.users.insert(insert_object, (error, result) => {
+                if (error) reject(error);
+                reslove(result);
+            });
+        } catch(err) {
+            reject(err);
+        }
+    });
+}
+
+
+async function check_email_exists(email_address){
+    return new Promise((reslove, reject) => {
+        try {
+            mongojs_db_connection.db.users.findOne({'email_address' : email_address}, (error, result) => {
+                if (error) reject(error);
+                reslove(result);
+            });
+        } catch(err) {
+            reject(err);
         }
     });
 }
