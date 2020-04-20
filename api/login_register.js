@@ -4,6 +4,8 @@ const body_parser = require('body-parser');
 const password = require('../utils/password_bcrypt');
 const mongojs_db_connection = require('../database/database.config.js');
 const jwt = require('jsonwebtoken');
+const get_token = require('../middleware/token');
+const auth = require('../middleware/auth');
 const route = express.Router();
 
 
@@ -18,7 +20,8 @@ route.post('/login', async(req, res, next) => {
             if(result && result.email_address) {
                 password.check_password(req.body.password, result.password).then((compare_password_status) => {
                     if (compare_password_status !== false) {
-                        const token = jwt.sign({email:result.email_address, _id:result._id}, config.get('jwt_private_key'));
+                        // const token = jwt.sign({email:result.email_address, _id:result._id}, config.get('jwt_private_key'));
+                        const token = get_token(result);
                         res.status(200).send({
                             'success' : true,
                             'message' : 'login sucessfully done.',
@@ -149,6 +152,13 @@ async function check_email_exists(email_address){
         }
     });
 }
+
+
+
+
+route.get('/fetch_profile', auth, async(req, res, next) => {
+    console.log('sujay');
+});
 
 
 
