@@ -2,12 +2,11 @@ const express = require('express')
 const config = require('config')
 const body_parser = require('body-parser');
 const mongojs_db_connection = require('../database/database.config.js');
-const asyncMiddleware = require('../utils/middleware');
 const Joi = require('joi');
 const formidable = require('formidable');
 const password = require('../utils/password_bcrypt');
-
-
+const jwt = require('jsonwebtoken');
+const redis_connection = require('../database/redis.config');
 
 
 
@@ -345,6 +344,56 @@ router.post('/advanced_insert', async (req, res, next) => {
         return;
     }
 })
+
+
+
+
+router.get('/get_access_token', async(req, res, next) => {
+    try {
+        const refresh_token = req.header('token');
+        if( typeof refresh_token === 'undefined' || !refresh_token) {
+            res.status(401).send({
+                'success' : false,
+                'message' : 'token is required'
+            });
+            return;
+        } else {
+            if (refresh_token.startsWith("Bearer ")){
+                //check refresh toke valid or not
+                const token = refresh_token.split(" ")[1];
+                try {
+                    const decode = jwt.verify(token, 'refresh_token');
+                    const access_token = jwt.sign({email:decode.email_address, _id:decode._id}, config.get('jwt_private_key'), {expiresIn: '30Min'})
+                    res.status(200).send({
+                        'success' : true,
+                        'message' : 'token successfully generate',
+                        'access_token' : access_token
+                    })
+                } catch(decode_error) {
+                    res.status(400).send({
+                        'success' : false,
+                        'message' : 'Invalid token'
+                    });
+                    return;
+                }
+           } else {
+                res.status(400).send({
+                    'success' : false,
+                    'message' : 'Invalid token'
+                });
+                return;
+           }
+            
+        }
+    } catch(e) {
+        res.status(400).send({
+            'success' : false,
+            'message' : e.message
+        });
+        return;
+    }
+    
+});
 
 
 

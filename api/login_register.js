@@ -4,7 +4,7 @@ const body_parser = require('body-parser');
 const password = require('../utils/password_bcrypt');
 const mongojs_db_connection = require('../database/database.config.js');
 const jwt = require('jsonwebtoken');
-const get_token = require('../middleware/token');
+const token = require('../middleware/token');
 const auth = require('../middleware/auth');
 const route = express.Router();
 
@@ -20,14 +20,17 @@ route.post('/login', async(req, res, next) => {
             if(result && result.email_address) {
                 password.check_password(req.body.password, result.password).then((compare_password_status) => {
                     if (compare_password_status !== false) {
-                        // const token = jwt.sign({email:result.email_address, _id:result._id}, config.get('jwt_private_key'));
-                        const token = get_token(result);
-                        res.status(200).send({
-                            'success' : true,
-                            'message' : 'login sucessfully done.',
-                            'token' : token
+                        const access_token = token.access_token(result);
+                        token.refresh_token(result, (refresh_token) => {
+                            res.status(200).send({
+                                'success' : true,
+                                'message' : 'login sucessfully done.',
+                                'access_token' : access_token,
+                                'refresh_token' : refresh_token
+                            });
+                            return;
                         });
-                        return;
+                        
                     } else {
                         res.status(400).send({
                             'success' : false,
