@@ -362,7 +362,7 @@ router.get('/get_access_token', async(req, res, next) => {
                 //check refresh toke valid or not
                 const token = refresh_token.split(" ")[1];
                 try {
-                    const decode = jwt.verify(token, 'refresh_token');
+                    const decode = jwt.verify(token, config.get('jwt_refresh_key'));
                     const access_token = jwt.sign({email:decode.email_address, _id:decode._id}, config.get('jwt_private_key'), {expiresIn: '30Min'})
                     res.status(200).send({
                         'success' : true,

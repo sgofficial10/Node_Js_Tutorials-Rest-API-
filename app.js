@@ -16,6 +16,11 @@ if(!config.get('jwt_private_key')){
     // 0 means success and 1 means error
     process.exit(1);
 }
+if(!config.get('jwt_refresh_key')) {
+    console.error('private refresh key is not define.');
+    // 0 means success and 1 means error
+    process.exit(1);
+}
 
 app.listen(3000, () => {
     console.log('Server is listening on port 3000');

@@ -160,7 +160,11 @@ async function check_email_exists(email_address){
 
 
 route.get('/fetch_profile', auth, async(req, res, next) => {
-    console.log('sujay');
+    res.status(200).send({
+        'success' : true,
+        'message' : req.header('token')
+    });
+    return;
 });
 
 

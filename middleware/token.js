@@ -11,7 +11,7 @@ function access_token(user_details){
 
 
 function refresh_token(user_details, callback){
-    //const refresh_token = jwt.sign({email:user_details.email_address, _id:user_details._id}, 'refresh_token', {expiresIn: '30d'});
+    //const refresh_token = jwt.sign({email:user_details.email_address, _id:user_details._id}, config.get('jwt_refresh_key'), {expiresIn: '30d'});
     redis_connection.hgetall('userId:'+user_details._id, (error, result) => {
         if (error) throw(error);
         if(result) {
@@ -19,12 +19,12 @@ function refresh_token(user_details, callback){
                 jwt.sign(result.refresh_token, 'refresh_token');
                 callback(result.refresh_token);
             } catch(decode_error) {
-                const refresh_token = jwt.sign({email:user_details.email_address, _id:user_details._id}, 'refresh_token', {expiresIn: '30d'});
+                const refresh_token = jwt.sign({email:user_details.email_address, _id:user_details._id}, config.get('jwt_refresh_key'), {expiresIn: '30d'});
                 redis_connection.hmset('userId:'+user_details._id, 'refresh_token', refresh_token, (err) => { });
                 callback(refresh_token);
             }
         } else {
-            const refresh_token = jwt.sign({email:user_details.email_address, _id:user_details._id}, 'refresh_token', {expiresIn: '30d'});
+            const refresh_token = jwt.sign({email:user_details.email_address, _id:user_details._id}, config.get('jwt_refresh_key'), {expiresIn: '30d'});
             redis_connection.hmset('userId:'+user_details._id, 'refresh_token', refresh_token, (err) => { });
             callback(refresh_token);
         }

@@ -1,3 +1,4 @@
 {
-    "jwt_private_key" : "node_jwt_private_key"
+    "jwt_private_key" : "node_jwt_private_key",
+    "jwt_refresh_key" : "node_jwt_refresh_key"
 }
