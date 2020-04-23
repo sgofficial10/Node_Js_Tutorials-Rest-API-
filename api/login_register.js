@@ -6,8 +6,10 @@ const mongojs_db_connection = require('../database/database.config.js');
 const jwt = require('jsonwebtoken');
 const token = require('../middleware/token');
 const auth = require('../middleware/auth');
+var express_validator = require('express-validator');
 const route = express.Router();
-
+const validation_schema = require('../validation_schema/validation_schema.js');
+route.use(express_validator())
 
 
 
@@ -94,30 +96,35 @@ async function get_user_details(fetch_object) {
 
 route.post('/register', async(req, res, next) => {
     try {
-        const check_email_exists_status = await check_email_exists(req.body.email_address);
-        if(!check_email_exists_status) {
-            const hashed_password = await password.password_hashing(req.body.password)
-            let insert_object = {
-                'email_address' : req.body.email_address,
-                'username' : req.body.username,
-                'gender' : req.body.gender,
-                'password' : hashed_password,
-                'is_delete' : '0'
-            }
-            const insert_status = await create_new_user(insert_object);
-                res.status(200).send({
-                    'success' : true,
-                    'message' : 'user created successfully done.'
+        req.checkBody(validation_schema.registration_schema);
+        const validation_errors = req.validationErrors();
+        if (validation_errors ) {
+            res.status(200).send({ 'success' : false, 'message' : validation_errors }); return;
+        } else {
+            const check_email_exists_status = await check_email_exists(req.body.email_address);
+            if(!check_email_exists_status) {
+                const hashed_password = await password.password_hashing(req.body.password)
+                let insert_object = {
+                    'email_address' : req.body.email_address.replace( /(<([^>]+)>)/ig, '').trim(),
+                    'username' : req.body.username.replace( /(<([^>]+)>)/ig, '').trim(),
+                    'gender' : req.body.gender.replace( /(<([^>]+)>)/ig, '').trim(),
+                    'password' : hashed_password,
+                    'is_delete' : '0'
+                }
+                const insert_status = await create_new_user(insert_object);
+                    res.status(200).send({
+                        'success' : true,
+                        'message' : 'user created successfully done.'
+                    });
+                    return;
+            } else {
+                res.status(400).send({
+                    'success' : false,
+                    'message' : 'email already exists.'
                 });
                 return;
-        } else {
-            res.status(400).send({
-                'success' : false,
-                'message' : 'email already exists.'
-            });
-            return;
+            }
         }
-        
     } catch(err) {
         console.log(err);
         res.status(400).send({
