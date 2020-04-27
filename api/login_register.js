@@ -1,14 +1,16 @@
-const express = require('express')
-const config = require('config')
-const body_parser = require('body-parser');
-const password = require('../utils/password_bcrypt');
-const mongojs_db_connection = require('../database/database.config.js');
-const jwt = require('jsonwebtoken');
-const token = require('../middleware/token');
-const auth = require('../middleware/auth');
-var express_validator = require('express-validator');
-const route = express.Router();
-const validation_schema = require('../validation_schema/validation_schema.js');
+const express                   =   require('express')
+const config                    =   require('config')
+const body_parser               =   require('body-parser');
+const password                  =   require('../utils/password_bcrypt');
+const mongojs_db_connection     =   require('../database/database.config.js');
+const jwt                       =   require('jsonwebtoken');
+const token                     =   require('../middleware/token');
+const auth                      =   require('../middleware/auth');
+var express_validator           =   require('express-validator');
+const route                     =   express.Router();
+const validation_schema         =   require('../validation_schema/validation_schema.js');
+const image_upload              =   require('../utils/image_upload')
+const multer                    =   require('multer')
 route.use(express_validator())
 
 
@@ -109,6 +111,7 @@ route.post('/register', async(req, res, next) => {
                     'username' : req.body.username.replace( /(<([^>]+)>)/ig, '').trim(),
                     'gender' : req.body.gender.replace( /(<([^>]+)>)/ig, '').trim(),
                     'password' : hashed_password,
+                    'image_url' : "",
                     'is_delete' : '0'
                 }
                 const insert_status = await create_new_user(insert_object);
@@ -126,7 +129,6 @@ route.post('/register', async(req, res, next) => {
             }
         }
     } catch(err) {
-        console.log(err);
         res.status(400).send({
             'success' : false,
             'message' : err.message
@@ -167,12 +169,63 @@ async function check_email_exists(email_address){
 
 
 route.get('/fetch_profile', auth, async(req, res, next) => {
-    res.status(200).send({
-        'success' : true,
-        'message' : req.header('token')
-    });
-    return;
+    try {
+        user_details = await fetchUserDetails(req.user._id);
+        res.status(200).send({
+            'success' : true,
+            'message' : 'fetch successfully done.',
+            'details' : user_details
+        });
+        return;
+    } catch(err) {
+        res.status(400).send({
+            'success' : false,
+            'message' : err.message
+        });
+        return;
+    }
+    
 });
+
+
+
+async function fetchUserDetails(user_id) {
+    return new Promise((reslove, reject) => {
+        try {
+            object_id = mongojs_db_connection.mongojs.ObjectId(user_id)
+            mongojs_db_connection.db.users.findOne({'_id' : object_id}, {_id:0, password:0, is_delete:0}, (error, result) =>{
+                if (error) reject(error)
+                reslove(result)
+            });
+        } catch(err) {
+            reject(err)
+        }
+    });
+}
+
+
+route.post('/image_upload', auth, image_upload.single('file'),  (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send({
+              'success': false,
+              'message' : 'Something went wrong!'
+            });
+        } else {
+            return res.status(200).send({
+                'success': true,
+                'message' : 'Image uploaded successfuly done.',
+                'file_name' : req.file.filename
+            })
+        }
+    } catch(err) {
+        res.status(400).send({
+            'success' : false,
+            'message' : err.message
+        });
+        return;
+    }
+})
 
 
 

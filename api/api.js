@@ -359,11 +359,10 @@ router.get('/get_access_token', async(req, res, next) => {
             return;
         } else {
             if (refresh_token.startsWith("Bearer ")){
-                //check refresh toke valid or not
                 const token = refresh_token.split(" ")[1];
                 try {
                     const decode = jwt.verify(token, config.get('jwt_refresh_key'));
-                    const access_token = jwt.sign({email:decode.email_address, _id:decode._id}, config.get('jwt_private_key'), {expiresIn: '30Min'})
+                    const access_token = jwt.sign({email_address:decode.email_address, _id:decode._id}, config.get('jwt_private_key'), {expiresIn: '30Min'})
                     res.status(200).send({
                         'success' : true,
                         'message' : 'token successfully generate',
