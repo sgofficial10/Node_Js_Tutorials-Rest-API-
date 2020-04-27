@@ -1,5 +1,5 @@
 database/database.config.js
 database/redis.json
 node_modules
-!images
 images/*
+!images/.gitkeep
